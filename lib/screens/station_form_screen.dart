@@ -323,7 +323,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                             child: Text(
                               '${index + 1}',
                               style: const TextStyle(
-                                color: Colors.white,
+                                color: Colors.white, 
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                               ),

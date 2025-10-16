@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tiq_service_mob/screens/inspection_details_screen.dart';
 import 'package:tiq_service_mob/screens/profile_screen.dart';
 import 'package:tiq_service_mob/screens/station_form_screen.dart';
 
@@ -207,6 +208,12 @@ class _HomeScreenState extends State<HomeScreen> {
               null,
               builder: (_) =>
                   const InspectionFormScreen(title: 'View Inspections'),
+            ),
+            _drawerItem(
+              Icons.read_more_rounded,
+              'View Inspections details',
+              null,
+              builder: (_) => const InspectionDetailsPage(),
             ),
           ],
         ),

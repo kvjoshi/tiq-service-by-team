@@ -1,7 +1,6 @@
-// lib/main.dart
 import 'package:flutter/material.dart';
-import 'screens/station_form_screen.dart';
-import 'screens/inspection_list_screen.dart';
+import 'package:tiq_service_mob/screens/profile_screen.dart';
+
 import 'screens/login_screen.dart';
 import 'screens/station_list_screen.dart';
 import 'controllers/inspection_api_controller.dart';
@@ -141,9 +140,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const primaryColor = Color(0xFF37A8C0);
+
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Station Inspection System'),
+        backgroundColor: primaryColor,
+        title: const Text(
+          'TankIQ Service',
+          style: TextStyle(color: Colors.white),
+        ),
         actions: [
           PopupMenuButton<String>(
             onSelected: (v) async {
@@ -155,18 +161,18 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
             icon: const CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Color(0xFF37A8C0)),
+              child: Icon(Icons.person, color: primaryColor),
             ),
           ),
         ],
       ),
       drawer: Drawer(
-        backgroundColor: const Color(0xFFF4FAFB),
+        backgroundColor: Colors.white,
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xFF37A8C0)),
+              decoration: BoxDecoration(color: primaryColor),
               child: Center(
                 child: Text(
                   'TIQ Station System',
@@ -194,76 +200,81 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF37A8C0), Color(0xFFE8F8FA)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Spacer(flex: 2),
-              const Icon(
-                Icons.local_gas_station,
-                size: 100,
-                color: Colors.white,
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Spacer(flex: 2),
+            Icon(Icons.local_gas_station, size: 90, color: primaryColor),
+            const SizedBox(height: 20),
+            const Text(
+              'Welcome to Station Inspection',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: primaryColor,
               ),
-              const SizedBox(height: 20),
-              const Text(
-                'Welcome to Station Inspection',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Manage and conduct inspections easily and efficiently.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
+            const Spacer(),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.add_circle_outline),
+              label: const Text(
+                'New Inspection',
+                style: TextStyle(fontSize: 16),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 24,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const SizedBox(height: 10),
-              const Text(
-                'Manage and conduct station inspections efficiently',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.white70),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.list),
+              label: const Text(
+                'All Inspections',
+                style: TextStyle(fontSize: 16),
               ),
-              const Spacer(flex: 1),
-              // ElevatedButton.icon(
-              //   icon: const Icon(Icons.add_circle_outline),
-              //   label: const Text('New Inspection'),
-              //   onPressed: () {
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(
-              //         builder: (_) => const StationFormScreen(),
-              //       ),
-              //     );
-              //   },
-              // ),
-              const SizedBox(height: 16),
-              // OutlinedButton.icon(
-              //   icon: const Icon(Icons.list),
-              //   label: const Text('View All Inspections'),
-              //   onPressed: () {
-              //     Navigator.push(
-              //       context,
-              //       MaterialPageRoute(
-              //         builder: (_) => const InspectionListScreen(),
-              //       ),
-              //     );
-              //   },
-              // ),
-              const Spacer(flex: 3),
-              const Text(
-                'Version 1.0.0',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 12),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: primaryColor,
+                side: const BorderSide(color: primaryColor, width: 1.5),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 24,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              const SizedBox(height: 10),
-            ],
-          ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+            ),
+            const Spacer(flex: 2),
+          ],
         ),
       ),
     );
@@ -275,8 +286,10 @@ class _HomeScreenState extends State<HomeScreen> {
     String? route, {
     WidgetBuilder? builder,
   }) {
+    const primaryColor = Color(0xFF37A8C0);
+
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF37A8C0)),
+      leading: Icon(icon, color: primaryColor),
       title: Text(title, style: const TextStyle(color: Colors.black87)),
       onTap: () {
         Navigator.of(context).pop();

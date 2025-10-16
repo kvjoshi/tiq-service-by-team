@@ -90,10 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      email,
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
+
                     const SizedBox(height: 20),
 
                     // Tabs

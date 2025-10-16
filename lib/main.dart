@@ -153,8 +153,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           PopupMenuButton<String>(
-            onSelected: (v) async {
-              if (v == 'logout') await _logout();
+            onSelected: (value) async {
+              if (value == 'logout') {
+                await _logout();
+              } else if (value == 'profile') {
+                // Navigate to ProfileScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              }
             },
             itemBuilder: (ctx) => [
               const PopupMenuItem(value: 'profile', child: Text('Profile')),
@@ -162,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
             icon: const CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: primaryColor),
+              child: Icon(Icons.person, color: Color(0xFF37A8C0)),
             ),
           ),
         ],
@@ -176,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
               decoration: BoxDecoration(color: primaryColor),
               child: Center(
                 child: Text(
-                  'TIQ Station System',
+                  'TankIQ Service',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 22,

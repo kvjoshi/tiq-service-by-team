@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tiq_service_mob/screens/profile_screen.dart';
+import 'package:tiq_service_mob/screens/station_form_screen.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/station_list_screen.dart';
@@ -189,13 +190,15 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.add_circle_outline,
               'New Inspection',
               null,
-              // builder: (_) => const StationFormScreen(),
+              builder: (_) =>
+                  const InspectionFormScreen(title: 'Inspection Form'),
             ),
             _drawerItem(
               Icons.list,
               'View Inspections',
               null,
-              // builder: (_) => const InspectionListScreen(),
+              builder: (_) =>
+                  const InspectionFormScreen(title: 'View Inspections'),
             ),
           ],
         ),
@@ -244,7 +247,10 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const InspectionFormScreen(title: "New Inspection"),
+                  ),
                 );
               },
             ),
@@ -269,7 +275,10 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const InspectionFormScreen(title: "All Inspections"),
+                  ),
                 );
               },
             ),

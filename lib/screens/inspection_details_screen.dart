@@ -248,7 +248,7 @@ class InspectionDetailsPage extends StatelessWidget {
                         ),
                         pw.SizedBox(height: 16),
 
-                        // Images at Bottom
+                        // Images in 2-column grid
                         if (imageBytes.isNotEmpty)
                           pw.Column(
                             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -257,16 +257,22 @@ class InspectionDetailsPage extends StatelessWidget {
                                 "Images",
                                 style: pw.TextStyle(fontSize: 18),
                               ),
-                              pw.SizedBox(height: 8),
-                              ...imageBytes.map(
-                                (bytes) => pw.Container(
-                                  margin: const pw.EdgeInsets.only(bottom: 8),
-                                  height: 150,
-                                  child: pw.Image(
-                                    pw.MemoryImage(bytes),
-                                    fit: pw.BoxFit.cover,
-                                  ),
-                                ),
+                              pw.Divider(),
+                              pw.Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: imageBytes.map((bytes) {
+                                  return pw.Container(
+                                    width:
+                                        (PdfPageFormat.a4.width / 2) -
+                                        24, // 2 columns
+                                    height: 120, // small height
+                                    child: pw.Image(
+                                      pw.MemoryImage(bytes),
+                                      fit: pw.BoxFit.cover,
+                                    ),
+                                  );
+                                }).toList(),
                               ),
                             ],
                           ),
@@ -274,7 +280,6 @@ class InspectionDetailsPage extends StatelessWidget {
                     ),
                   );
 
-                  // Open print preview
                   await Printing.layoutPdf(
                     onLayout: (PdfPageFormat format) async => pdf.save(),
                   );

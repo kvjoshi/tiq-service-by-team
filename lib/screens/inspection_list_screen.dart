@@ -68,8 +68,8 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
       case "approved":
       case "completed":
         return "Completed";
-      case "pending":
       case "pending_approval":
+      case "In Progress":
         return "Pending Approval";
       default:
         return "In Progress";
@@ -80,7 +80,7 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
     switch (status) {
       case "Completed":
         return Colors.green.shade100;
-      case "Pending Approval":
+      case "In Progress":
         return const Color(0xFFFFFBC2);
       default:
         return Colors.grey.shade300;
@@ -104,6 +104,7 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
       case "Pass":
         return Colors.green.shade900;
       case "Pending Approval":
+      case "In Progress":
         return const Color(0xFFB38F00);
       case "Fail":
         return Colors.red.shade900;

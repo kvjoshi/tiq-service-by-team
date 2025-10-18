@@ -205,15 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _drawerItem(
               Icons.list,
-              'View Inspections',
+              'Inspections list',
               null,
               builder: (_) => const InspectionListScreen(),
-            ),
-            _drawerItem(
-              Icons.read_more_rounded,
-              'View Inspections details',
-              null,
-              builder: (_) => const InspectionDetailsPage(),
             ),
           ],
         ),

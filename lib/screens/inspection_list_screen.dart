@@ -92,7 +92,6 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
 
   // Status helpers
   String _getReadableStatus(String? status) {
-    debugPrint(status);
     switch (status?.toLowerCase()) {
       case "approved":
       case "completed":

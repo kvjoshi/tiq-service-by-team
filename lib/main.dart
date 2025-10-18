@@ -207,8 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.list,
               'View Inspections',
               null,
-              builder: (_) =>
-                  const InspectionFormScreen(title: 'View Inspections'),
+              builder: (_) => const InspectionListScreen(),
             ),
             _drawerItem(
               Icons.read_more_rounded,

@@ -1,44 +1,81 @@
 import 'package:flutter/material.dart';
-import 'package:tiq_service_mob/screens/inspection_details_screen.dart';
-import 'package:tiq_service_mob/screens/station_form_screen.dart';
+import '../controllers/inspection_api_controller.dart';
+import '../models/inspection_model.dart';
+import 'inspection_details_screen.dart';
+import 'station_form_screen.dart';
 
-const List<Map<String, dynamic>> inspectionList = [
-  {
-    "stationName": "Fuel Point A",
-    "stationCode": "STN-001",
-    "stationAddress": "123 Green Avenue, City Center",
-    "createdAt": "2025-10-10",
-    "updatedAt": "2025-10-15",
-    "engineerAssigned": "John Doe",
-    "status": "Pending Approval",
-    "result": "Fail",
-  },
-  {
-    "stationName": "PetroMax Station",
-    "stationCode": "STN-002",
-    "stationAddress": "45 Highway Road, West Zone",
-    "createdAt": "2025-09-25",
-    "updatedAt": "2025-10-05",
-    "engineerAssigned": "Alice Smith",
-    "status": "Completed",
-    "result": "Pass",
-  },
-  {
-    "stationName": "Energy Fuel Depot",
-    "stationCode": "STN-003",
-    "stationAddress": "678 Industrial Lane, East Block",
-    "createdAt": "2025-09-20",
-    "updatedAt": "2025-10-02",
-    "engineerAssigned": "Robert White",
-    "status": "Completed",
-    "result": "Fail",
-  },
-];
-
-class InspectionListScreen extends StatelessWidget {
+class InspectionListScreen extends StatefulWidget {
   const InspectionListScreen({super.key});
 
-  // Status badge background colors
+  @override
+  State<InspectionListScreen> createState() => _InspectionListScreenState();
+}
+
+class _InspectionListScreenState extends State<InspectionListScreen> {
+  final InspectionApiController _api = InspectionApiController();
+  bool _loading = true;
+  String? _error;
+  List<InspectionModel> _inspections = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchInspections();
+  }
+
+  Future<void> _fetchInspections() async {
+    final res = await _api.getAllInspections();
+
+    if (!mounted) return;
+
+    if (res.success && res.data != null) {
+      setState(() {
+        _inspections = res.data!;
+        _loading = false;
+      });
+    } else {
+      setState(() {
+        _error = res.message;
+        _loading = false;
+      });
+    }
+  }
+
+  // Simple helper to derive pass/fail
+  String _getInspectionResult(InspectionModel insp) {
+    final failInDispenser =
+        insp.dispenserInspection?.values.any(
+          (d) => d['status']?.toString().toLowerCase() == 'fail',
+        ) ??
+        false;
+    final failInTank =
+        insp.tankInspection?.values.any(
+          (t) => t['status']?.toString().toLowerCase() == 'fail',
+        ) ??
+        false;
+    final failInTCEQ =
+        insp.tceqInspection?.values.any(
+          (t) => t['status']?.toString().toLowerCase() == 'fail',
+        ) ??
+        false;
+
+    return (failInDispenser || failInTank || failInTCEQ) ? "Fail" : "Pass";
+  }
+
+  // Map approved/pending/other statuses to readable text
+  String _getReadableStatus(String? status) {
+    switch (status?.toLowerCase()) {
+      case "approved":
+      case "completed":
+        return "Completed";
+      case "pending":
+      case "pending_approval":
+        return "Pending Approval";
+      default:
+        return "In Progress";
+    }
+  }
+
   Color _getStatusColor(String status) {
     switch (status) {
       case "Completed":
@@ -50,7 +87,6 @@ class InspectionListScreen extends StatelessWidget {
     }
   }
 
-  // Result badge background colors
   Color _getResultColor(String result) {
     switch (result) {
       case "Pass":
@@ -62,7 +98,6 @@ class InspectionListScreen extends StatelessWidget {
     }
   }
 
-  // Text color for both status & result
   Color _getTextColor(String value) {
     switch (value) {
       case "Completed":
@@ -79,19 +114,36 @@ class InspectionListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("Inspection List"),
+          backgroundColor: const Color(0xFF37A8C0),
+        ),
+        body: Center(
+          child: Text(_error!, style: const TextStyle(color: Colors.red)),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FC),
       appBar: AppBar(
         title: const Text("Inspection List"),
         backgroundColor: const Color(0xFF37A8C0),
-        elevation: 0,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView.builder(
-          itemCount: inspectionList.length,
+          itemCount: _inspections.length,
           itemBuilder: (context, index) {
-            final item = inspectionList[index];
+            final insp = _inspections[index];
+            final status = _getReadableStatus(insp.status);
+            final result = _getInspectionResult(insp);
 
             return Container(
               margin: const EdgeInsets.only(bottom: 20),
@@ -112,9 +164,8 @@ class InspectionListScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Station Name
                     Text(
-                      item['stationName'],
+                      insp.stationName,
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.bold,
@@ -122,17 +173,16 @@ class InspectionListScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text("Code: ${item['stationCode']}"),
-                    Text("Address: ${item['stationAddress']}"),
+                    Text("Address: ${insp.stationAddress}"),
+                    Text("Engineer: ${insp.engineerName}"),
+                    Text(
+                      "Created At: ${insp.createdAt?.toLocal().toString().split(' ').first ?? ''}",
+                    ),
+                    Text(
+                      "Updated At: ${insp.updatedAt?.toLocal().toString().split(' ').first ?? ''}",
+                    ),
                     const Divider(height: 20),
 
-                    // Details
-                    Text("Engineer Assigned: ${item['engineerAssigned']}"),
-                    Text("Created At: ${item['createdAt']}"),
-                    Text("Updated At: ${item['updatedAt']}"),
-                    const SizedBox(height: 12),
-
-                    // Status and Result with labels
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -148,13 +198,13 @@ class InspectionListScreen extends StatelessWidget {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: _getStatusColor(item['status']),
+                                color: _getStatusColor(status),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                item['status'],
+                                status,
                                 style: TextStyle(
-                                  color: _getTextColor(item['status']),
+                                  color: _getTextColor(status),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -174,13 +224,13 @@ class InspectionListScreen extends StatelessWidget {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: _getResultColor(item['result']),
+                                color: _getResultColor(result),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                item['result'],
+                                result,
                                 style: TextStyle(
-                                  color: _getTextColor(item['result']),
+                                  color: _getTextColor(result),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -193,7 +243,6 @@ class InspectionListScreen extends StatelessWidget {
 
                     const SizedBox(height: 16),
 
-                    // Action Buttons
                     Row(
                       children: [
                         Expanded(
@@ -227,7 +276,6 @@ class InspectionListScreen extends StatelessWidget {
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {
-                              // Edit action
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -245,7 +293,6 @@ class InspectionListScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-
                             child: const Text(
                               "Edit",
                               style: TextStyle(

@@ -76,7 +76,7 @@ class _StationListScreenState extends State<StationListScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F9FC),
       appBar: AppBar(
-        title: const Text('Stations'),
+        title: const Text('Station List'),
         backgroundColor: const Color(0xFF37A8C0),
         elevation: 0,
       ),

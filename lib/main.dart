@@ -195,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-            _drawerItem(Icons.local_gas_station, 'Stations', '/stations'),
+            _drawerItem(Icons.local_gas_station, 'Station List', '/stations'),
             _drawerItem(
               Icons.add_circle_outline,
               'New Inspection',
@@ -205,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             _drawerItem(
               Icons.list,
-              'Inspections list',
+              'Inspection list',
               null,
               builder: (_) => const InspectionListScreen(),
             ),

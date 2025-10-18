@@ -42,8 +42,6 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   Map<String, TextEditingController> _commentsControllers = {};
   List<File> _images = [];
   final ImagePicker _picker = ImagePicker();
-
-  // controller for inspection date
   late final TextEditingController _inspectionDateController;
 
   @override
@@ -90,25 +88,25 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
         state: _currentStep > 0 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title: const Text('Dispenser'),
+        title: const Text('Dispenser Checklist'),
         content: _buildChecklist('dispenserChecklist'),
         isActive: _currentStep >= 1,
         state: _currentStep > 1 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title: const Text('Tank'),
+        title: const Text('Tank Checklist'),
         content: _buildChecklist('tankChecklist'),
         isActive: _currentStep >= 2,
         state: _currentStep > 2 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title: const Text('TCEQ'),
+        title: const Text('TCEQ Checklist'),
         content: _buildChecklist('tceqChecklist'),
         isActive: _currentStep >= 3,
         state: _currentStep > 3 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title: const Text('Images'),
+        title: const Text('Insepction Images'),
         content: _buildImageSection(),
         isActive: _currentStep >= 4,
         state: _currentStep > 4 ? StepState.complete : StepState.indexed,
@@ -130,7 +128,6 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
           validator: (val) => val == null ? 'Please select a station' : null,
         ),
         const SizedBox(height: 16),
-        // 👇 Disabled inspection date field (shows current date)
         TextField(
           controller: _inspectionDateController,
           readOnly: true,
@@ -151,41 +148,56 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     return Column(
       children: questions.map((q) {
         final questionKey = q['key'];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              q['question'],
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            Row(
+        return Card(
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Radio<String>(
-                  value: 'Yes',
-                  groupValue: _answers[questionKey],
-                  onChanged: (val) =>
-                      setState(() => _answers[questionKey] = val),
+                Text(
+                  q['question'],
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-                const Text('Yes'),
-                Radio<String>(
-                  value: 'No',
-                  groupValue: _answers[questionKey],
-                  onChanged: (val) =>
-                      setState(() => _answers[questionKey] = val),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Radio<String>(
+                      value: 'Yes',
+                      groupValue: _answers[questionKey],
+                      onChanged: (val) =>
+                          setState(() => _answers[questionKey] = val),
+                    ),
+                    const Text('Yes'),
+                    const SizedBox(width: 20),
+                    Radio<String>(
+                      value: 'No',
+                      groupValue: _answers[questionKey],
+                      onChanged: (val) =>
+                          setState(() => _answers[questionKey] = val),
+                    ),
+                    const Text('No'),
+                  ],
                 ),
-                const Text('No'),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _commentsControllers[questionKey],
+                  decoration: const InputDecoration(
+                    hintText: 'Comments',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
               ],
             ),
-            TextFormField(
-              controller: _commentsControllers[questionKey],
-              decoration: const InputDecoration(
-                hintText: 'Comments',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-            ),
-            const SizedBox(height: 16),
-          ],
+          ),
         );
       }).toList(),
     );
@@ -196,7 +208,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: double.infinity, // full-width button
+          width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: _pickImage,
             icon: const Icon(Icons.image),
@@ -228,7 +240,6 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                       fit: BoxFit.cover,
                     ),
                   ),
-                  // Cross button on top-right
                   Positioned(
                     top: 4,
                     right: 4,
@@ -260,7 +271,44 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     );
   }
 
+  bool _validateCurrentStep() {
+    switch (_currentStep) {
+      case 0: // Station Details
+        if (_selectedStation == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please select a station')),
+          );
+          return false;
+        }
+        return true;
+      case 1: // Dispenser
+        return _validateChecklist('dispenserChecklist');
+      case 2: // Tank
+        return _validateChecklist('tankChecklist');
+      case 3: // TCEQ
+        return _validateChecklist('tceqChecklist');
+      default:
+        return true; // Images step has no required fields
+    }
+  }
+
+  bool _validateChecklist(String key) {
+    final questions = questionsJson[key] as List<dynamic>;
+    for (var q in questions) {
+      final questionKey = q['key'];
+      if (_answers[questionKey] == null || _answers[questionKey]!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please answer: ${q['question']}')),
+        );
+        return false;
+      }
+    }
+    return true;
+  }
+
   void _onStepContinue() {
+    if (!_validateCurrentStep()) return;
+
     if (_currentStep < _buildSteps().length - 1) {
       setState(() => _currentStep += 1);
     } else {
@@ -287,6 +335,56 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     );
   }
 
+  Widget _buildStepIndicator() {
+    final steps = _buildSteps();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      child: Row(
+        children: List.generate(steps.length, (index) {
+          final isActive = index == _currentStep;
+          final isCompleted = index < _currentStep;
+          return Expanded(
+            child: Column(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isCompleted
+                        ? Colors.green
+                        : isActive
+                        ? const Color(0xFF37A8C0)
+                        : Colors.grey.shade300,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  (steps[index].title as Text).data!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isActive ? const Color(0xFF37A8C0) : Colors.black54,
+                    fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final steps = _buildSteps();
@@ -296,74 +394,10 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
         key: _formKey,
         child: Column(
           children: [
-            // Custom horizontal step header
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(steps.length, (index) {
-                  final isActive = index == _currentStep;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? const Color(0xFF37A8C0)
-                                : Colors.grey.shade300,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Center(
-                            child: Text(
-                              '${index + 1}',
-                              style: const TextStyle(
-                                color: Colors.white, 
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // 👇 Break title words vertically
-                        Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: (steps[index].title as Text).data!
-                              .split(' ')
-                              .map(
-                                (word) => Text(
-                                  word,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontWeight: isActive
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    color: isActive
-                                        ? const Color(0xFF37A8C0)
-                                        : Colors.black54,
-                                    fontSize: 12,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            ),
-
-            const Divider(),
-
-            // Fixed-width form area
+            // Fixed step header
+            _buildStepIndicator(),
+            const Divider(height: 1),
+            // Form content
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -375,14 +409,12 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                 ),
               ),
             ),
-
-            // Navigation buttons
+            // Buttons
             Container(
               margin: const EdgeInsets.only(bottom: 30, top: 10),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  // Back button: only show if not first step
                   if (_currentStep > 0)
                     Expanded(
                       child: OutlinedButton(
@@ -397,7 +429,6 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                       ),
                     ),
                   if (_currentStep > 0) const SizedBox(width: 12),
-                  // Next / Submit button
                   Expanded(
                     child: ElevatedButton(
                       onPressed: _onStepContinue,

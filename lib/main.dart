@@ -154,25 +154,75 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(color: Colors.white),
         ),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'logout') {
-                await _logout();
-              } else if (value == 'profile') {
-                // Navigate to ProfileScreen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
-              }
-            },
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(value: 'profile', child: Text('Profile')),
-              const PopupMenuItem(value: 'logout', child: Text('Logout')),
-            ],
-            icon: const CircleAvatar(
-              backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Color(0xFF37A8C0)),
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0, right: 12.0),
+            child: PopupMenuButton<String>(
+              onSelected: (value) async {
+                if (value == 'logout') {
+                  await _logout();
+                } else if (value == 'profile') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  );
+                }
+              },
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              color: Colors.white,
+              elevation: 4,
+              offset: const Offset(0, 45), // top margin below AppBar
+              constraints: const BoxConstraints(minWidth: 130, maxWidth: 220),
+              itemBuilder: (ctx) => [
+                PopupMenuItem(
+                  value: 'profile',
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.person, color: Color(0xFF37A8C0)),
+                      SizedBox(width: 8), // smaller spacing
+                      Text(
+                        'Profile',
+                        style: TextStyle(
+                          color: const Color(0xFF404040),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'logout',
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.logout, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text(
+                        'Logout',
+                        style: TextStyle(
+                          color: const Color(0xFF404040),
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              icon: const CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Color(0xFF37A8C0)),
+              ),
             ),
           ),
         ],

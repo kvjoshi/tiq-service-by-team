@@ -44,12 +44,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userData = _profile ?? {};
-    final avatarUrl = userData['brandingLogoUrl'] as String?;
+    final avatarUrl = userData['userProfilePhotoUrl'] as String?;
     final firstName = userData['fName'] as String? ?? '';
     final lastName = userData['lName'] as String? ?? '';
     final email = userData['email'] as String? ?? '';
     final phone = userData['phone'] as String? ?? '';
 
+    debugPrint('Rendering Profile Screen with data: ${userData}');
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),

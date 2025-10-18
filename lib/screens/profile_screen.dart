@@ -12,7 +12,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _api = InspectionApiController();
   bool _loading = true;
   Map<String, dynamic>? _profile;
-  int _selectedTab = 0;
 
   @override
   void initState() {
@@ -23,10 +22,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfile() async {
     setState(() => _loading = true);
     final res = await _api.getUserProfile();
+
+    debugPrint('Profile API Response: ${res.data}');
+
     if (res.success && res.data != null) {
       setState(() {
-        // directly use user_withOrgs
-        _profile = res.data?['user_withOrgs'];
+        // Adjust based on actual response structure
+        _profile = res.data?['user_withOrgs'] ?? res.data;
         _loading = false;
       });
     } else {
@@ -43,10 +45,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final userData = _profile ?? {};
     final avatarUrl = userData['brandingLogoUrl'] as String?;
-    final firstName = _profile?['fName'] as String? ?? '';
-    final lastName = _profile?['lName'] as String? ?? '';
-    final email = _profile?['email'] as String? ?? '';
-    final phone = _profile?['phone'] as String? ?? '';
+    final firstName = userData['fName'] as String? ?? '';
+    final lastName = userData['lName'] as String? ?? '';
+    final email = userData['email'] as String? ?? '';
+    final phone = userData['phone'] as String? ?? '';
 
     return Scaffold(
       appBar: AppBar(
@@ -54,168 +56,119 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: const Color(0xFF37A8C0),
         elevation: 0,
       ),
+      backgroundColor: Colors.white, // entire page white
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : Container(
-              color: Colors.white,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 24,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    CircleAvatar(
-                      radius: 55,
-                      backgroundColor: const Color(0xFF37A8C0),
-                      backgroundImage:
-                          (avatarUrl != null && avatarUrl.isNotEmpty)
-                          ? NetworkImage(avatarUrl)
-                          : null,
-                      child: (avatarUrl == null || avatarUrl.isEmpty)
-                          ? const Icon(
-                              Icons.person,
-                              size: 60,
-                              color: Colors.white,
-                            )
-                          : null,
+          : SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Avatar
+                  CircleAvatar(
+                    radius: 55,
+                    backgroundColor: const Color(0xFF37A8C0),
+                    backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                    child: (avatarUrl == null || avatarUrl.isEmpty)
+                        ? const Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.white,
+                          )
+                        : null,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    '$firstName $lastName',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '$firstName $lastName',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
+                  ),
+                  const SizedBox(height: 20),
 
-                    const SizedBox(height: 20),
-
-                    // Tabs
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF7FA),
-                        borderRadius: BorderRadius.circular(40),
-                      ),
-                      padding: const EdgeInsets.all(6),
-                      child: Row(
-                        children: [
-                          _tabPill('Personal Info', 0),
-                          _tabPill('Change Password', 1),
-                        ],
-                      ),
+                  // Personal Info Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade600, width: 1),
                     ),
-                    const SizedBox(height: 24),
+                    padding: const EdgeInsets.all(20),
 
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      child: _selectedTab == 0
-                          ? _personalInfoCard(firstName, lastName, email, phone)
-                          : _passwordCard(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'Personal Information',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+                        _buildReadOnlyField('First Name', firstName),
+                        const SizedBox(height: 12),
+                        _buildReadOnlyField('Last Name', lastName),
+                        const SizedBox(height: 12),
+                        _buildReadOnlyField('Email', email),
+                        const SizedBox(height: 12),
+                        _buildReadOnlyField('Phone', phone),
+                        const SizedBox(height: 24),
+
+                        // Edit Details Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Add edit functionality here
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF37A8C0),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Edit Details',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
     );
   }
 
-  Widget _tabPill(String label, int index) {
-    final active = _selectedTab == index;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedTab = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: active ? const Color(0xFF37A8C0) : Colors.transparent,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: active ? Colors.white : Colors.black87,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+  Widget _buildReadOnlyField(String label, String value) {
+    return TextFormField(
+      readOnly: true,
+      initialValue: value,
+      decoration: InputDecoration(
+        labelText: label,
+        filled: true,
+        fillColor: const Color(0xFFEFF7FA),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
         ),
       ),
-    );
-  }
-
-  Widget _personalInfoCard(
-    String firstName,
-    String lastName,
-    String email,
-    String phone,
-  ) {
-    final deco = _inputDecoration();
-
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Personal Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              readOnly: true,
-              decoration: deco.copyWith(labelText: 'First Name'),
-              initialValue: firstName,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              readOnly: true,
-              decoration: deco.copyWith(labelText: 'Last Name'),
-              initialValue: lastName,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              readOnly: true,
-              decoration: deco.copyWith(labelText: 'Email'),
-              initialValue: email,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              readOnly: true,
-              decoration: deco.copyWith(labelText: 'Phone'),
-              initialValue: phone,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _passwordCard() {
-    return const Center(
-      child: Text(
-        'Password change is not available in read-only mode.',
-        style: TextStyle(color: Colors.grey),
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration() {
-    return InputDecoration(
-      filled: true,
-      fillColor: const Color(0xFFEFF7FA),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
     );
   }
 }

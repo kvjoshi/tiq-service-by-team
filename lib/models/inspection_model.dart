@@ -9,7 +9,8 @@ class InspectionModel {
 
   // --- People ---
   String inspectorName = ''; // internal
-  String engineerName = ''; // UI compatibility (some responses use this)
+  String engineerName = ''; // UI compatibility
+  String serviceCompany = ''; // UI compatibility
 
   // --- Dates & meta ---
   String status = '';
@@ -18,40 +19,18 @@ class InspectionModel {
   DateTime updatedAt = DateTime.now();
   DateTime inspectionDate = DateTime.now();
 
-  // --- Raw inspection sections (match API) ---
-  // These map keys like "D1", "T1", etc. to their objects:
-  // { "D1": {"status":"Fail","comment":"...","label":"..."} }
+  // --- Raw inspection sections from API ---
   Map<String, dynamic>? dispenserInspection;
   Map<String, dynamic>? tankInspection;
   Map<String, dynamic>? tceqInspection;
 
-  // --- Checklists for UI/edit mode (optional defaults) ---
-  List<ChecklistItem> dispenserChecklist = [
-    ChecklistItem(question: 'Dispensers are clean and properly maintained'),
-    ChecklistItem(question: 'No visible leaks or damage'),
-    ChecklistItem(question: 'Price displays are functioning'),
-    ChecklistItem(question: 'Emergency shut-off is accessible'),
-    ChecklistItem(question: 'Fire extinguisher is present and charged'),
-  ];
-
-  List<ChecklistItem> tankChecklist = [
-    ChecklistItem(question: 'Tank vents are unobstructed'),
-    ChecklistItem(question: 'No signs of corrosion or damage'),
-    ChecklistItem(question: 'Spill containment is intact'),
-    ChecklistItem(question: 'Tank gauges are functioning properly'),
-    ChecklistItem(question: 'Fill caps are secure and sealed'),
-  ];
-
-  List<ChecklistItem> tceqChecklist = [
-    ChecklistItem(question: 'UST registration is current and posted'),
-    ChecklistItem(question: 'Leak detection system is operational'),
-    ChecklistItem(question: 'Records are up to date and accessible'),
-    ChecklistItem(question: 'Overfill protection is functioning'),
-    ChecklistItem(question: 'Corrosion protection is in place'),
-  ];
+  // --- Checklists derived from API ---
+  List<ChecklistItem> dispenserChecklist = [];
+  List<ChecklistItem> tankChecklist = [];
+  List<ChecklistItem> tceqChecklist = [];
 
   // --- Images ---
-  List<ImageItem> images = [];
+  List<String> urls = [];
 
   // --- Computed helpers ---
   int get totalItems =>
@@ -70,24 +49,18 @@ class InspectionModel {
     return (answeredItems / totalItems) * 100;
   }
 
-  int get imageCount => images.length;
+  int get imageCount => urls.length;
 
-  /// Derive inspection result from raw inspection maps.
-  /// Returns "Fail" if any contained item has status == 'Fail' (case-insensitive).
   String get inspectionResult {
     bool hasFailInMap(Map<String, dynamic>? section) {
       if (section == null) return false;
-      try {
-        return section.values.any((v) {
-          if (v is Map) {
-            final s = (v['status'] ?? '').toString().toLowerCase();
-            return s == 'fail';
-          }
-          return false;
-        });
-      } catch (_) {
+      return section.values.any((v) {
+        if (v is Map) {
+          final s = (v['status'] ?? '').toString().toLowerCase();
+          return s == 'fail';
+        }
         return false;
-      }
+      });
     }
 
     if (hasFailInMap(dispenserInspection) ||
@@ -95,9 +68,7 @@ class InspectionModel {
         hasFailInMap(tceqInspection)) {
       return 'Fail';
     }
-    // fallback: if model.result provided prefer that, else Pass
-    if (result.isNotEmpty) return result;
-    return 'Pass';
+    return result.isNotEmpty ? result : 'Pass';
   }
 
   // --- Serialization ---
@@ -120,7 +91,7 @@ class InspectionModel {
       'dispenserChecklist': dispenserChecklist.map((e) => e.toJson()).toList(),
       'tankChecklist': tankChecklist.map((e) => e.toJson()).toList(),
       'tceqChecklist': tceqChecklist.map((e) => e.toJson()).toList(),
-      'images': images.map((e) => e.toJson()).toList(),
+      'urls': urls,
     };
   }
 
@@ -129,21 +100,19 @@ class InspectionModel {
 
     model.id = json['_id'] ?? '';
     model.stationName = json['stationName'] ?? '';
-    // stationAddress could be at top-level or nested inside stationId->address etc.
     model.stationAddress =
         json['stationAddress'] ??
         (json['stationId'] is Map
             ? (json['stationId']['address']?['street'] ?? '')
             : '');
 
-    // names — tolerate both field names
     model.inspectorName =
         json['inspectorName'] ??
         json['engineerName'] ??
         json['engineerAssigned'] ??
         '';
-
     model.engineerName = model.inspectorName;
+    model.serviceCompany = json['serviceCompany'] ?? '';
 
     model.stationId = json['stationId'] is String
         ? json['stationId']
@@ -176,7 +145,7 @@ class InspectionModel {
       model.inspectionDate = model.createdAt;
     }
 
-    // Raw inspection sections: accept multiple casings/keys
+    // --- Raw inspection sections ---
     model.dispenserInspection =
         (json['Dispenser_inspection'] ??
                 json['dispenserInspection'] ??
@@ -213,40 +182,35 @@ class InspectionModel {
           )
         : null;
 
-    // If API returns structured checklists as arrays for these sections, convert them.
-    // but keep original lists if present
-    if (json['dispenserChecklist'] != null) {
-      model.dispenserChecklist = (json['dispenserChecklist'] as List)
-          .map((e) => ChecklistItem.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-    }
+    // --- Generate dynamic checklists from API maps ---
+    model.dispenserChecklist = mapInspectionToChecklist(
+      model.dispenserInspection,
+    );
+    model.tankChecklist = mapInspectionToChecklist(model.tankInspection);
+    model.tceqChecklist = mapInspectionToChecklist(model.tceqInspection);
 
-    if (json['tankChecklist'] != null) {
-      model.tankChecklist = (json['tankChecklist'] as List)
-          .map((e) => ChecklistItem.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-    }
-
-    if (json['tceqChecklist'] != null) {
-      model.tceqChecklist = (json['tceqChecklist'] as List)
-          .map((e) => ChecklistItem.fromJson(Map<String, dynamic>.from(e)))
-          .toList();
-    }
-
-    if (json['images'] != null && json['images'] is List) {
-      // API may send list of strings (paths) or object entries
-      model.images = (json['images'] as List).map((e) {
-        if (e is String) {
-          return ImageItem(imagePath: e, imageBase64: '');
-        } else if (e is Map) {
-          return ImageItem.fromJson(Map<String, dynamic>.from(e));
-        } else {
-          return ImageItem(imagePath: '', imageBase64: '');
-        }
-      }).toList();
+    // --- Images ---
+    if (json['urls'] != null && json['urls'] is List) {
+      model.urls = (json['urls'] as List).map((e) => e.toString()).toList();
     }
 
     return model;
+  }
+
+  // helper to map raw API inspection maps to ChecklistItem
+  static List<ChecklistItem> mapInspectionToChecklist(
+    Map<String, dynamic>? section,
+  ) {
+    if (section == null) return [];
+    return section.entries.map((e) {
+      return ChecklistItem(
+        question: e.value['label'] ?? '',
+        answer: e.value['status']?.toString().toLowerCase() == 'pass'
+            ? true
+            : false,
+        comment: e.value['comment'] ?? '',
+      );
+    }).toList();
   }
 }
 

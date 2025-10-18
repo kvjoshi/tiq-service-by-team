@@ -206,7 +206,6 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 🧾 Inspection List
             Expanded(
               child: _filteredInspections.isEmpty
                   ? const Center(child: Text("No inspections found"))
@@ -336,7 +335,9 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
                                             context,
                                             MaterialPageRoute(
                                               builder: (context) =>
-                                                  const InspectionDetailsPage(),
+                                                  InspectionDetailsPage(
+                                                    inspectionId: insp.id,
+                                                  ),
                                             ),
                                           );
                                         },

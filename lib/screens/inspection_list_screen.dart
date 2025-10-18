@@ -92,13 +92,15 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
 
   // Status helpers
   String _getReadableStatus(String? status) {
+    debugPrint(status);
     switch (status?.toLowerCase()) {
       case "approved":
       case "completed":
         return "Completed";
       case "pending approval":
-      case "in progress":
         return "Pending Approval";
+      case "cancel":
+        return "Cancelled";
       default:
         return "In Progress";
     }
@@ -108,9 +110,12 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
     switch (status) {
       case "Completed":
         return Colors.green.shade100;
-      case "In Progress":
       case "Pending Approval":
         return const Color(0xFFFFFBC2);
+      case "Cancelled":
+      case "cancel":
+      case "Cancel":
+        return Colors.red.shade100;
       default:
         return Colors.grey.shade300;
     }
@@ -136,6 +141,9 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
       case "In Progress":
         return const Color(0xFFB38F00);
       case "Fail":
+      case "Cancelled":
+      case "cancel":
+      case "Cancel":
         return Colors.red.shade900;
       default:
         return Colors.black87;

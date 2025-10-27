@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../widgets/custom_dropdown.dart';
+import '../controllers/inspection_api_controller.dart';
 
 void main() {
   runApp(
@@ -36,8 +37,22 @@ class InspectionFormScreen extends StatefulWidget {
 class _InspectionFormScreenState extends State<InspectionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 0;
-  final List<String> _stations = ["Station A", "Station B", "Station C"];
+  List<String> _stations = [];
+
+  Future<void> _loadStations() async {
+    final controller = InspectionApiController();
+
+    final stationsData = await controller.readStations();
+    if (!mounted) return;
+    setState(() {
+      _stations = stationsData
+          .map((s) => s['stationName'] as String) // extract station names
+          .toList();
+    });
+  }
+
   String? _selectedStation;
+
   final DateTime _inspectionDate = DateTime.now();
   Map<String, dynamic> _answers = {};
   Map<String, TextEditingController> _commentsControllers = {};
@@ -46,16 +61,14 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   late final TextEditingController _inspectionDateController;
 
   @override
+  @override
+  @override
   void initState() {
     super.initState();
     _inspectionDateController = TextEditingController(
       text: DateFormat('dd MMM yyyy').format(_inspectionDate),
     );
-    questionsJson.forEach((key, questions) {
-      for (var q in questions) {
-        _commentsControllers[q['key']] = TextEditingController();
-      }
-    });
+    _loadStations();
   }
 
   @override
@@ -116,16 +129,16 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   }
 
   Widget _buildStationDetails() {
+    debugPrint("Selected station: $_stations");
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          width: double.infinity, // full width trigger
+          width: double.infinity,
           child: CustomDropdown(
-            items: _stations,
+            items: _stations, // pass directly, no .map() needed
             selectedValue: _selectedStation,
-            popupWidth:
-                MediaQuery.of(context).size.width * 0.95, // 95% of screen width
+            popupWidth: MediaQuery.of(context).size.width * 0.95,
             onChanged: (val) {
               setState(() {
                 _selectedStation = val;
@@ -133,6 +146,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
             },
           ),
         ),
+
         const SizedBox(height: 16),
         TextField(
           controller: _inspectionDateController,

@@ -171,19 +171,13 @@ class InspectionApiController {
   }
 
   Future<List<Map<String, dynamic>>> readStations() async {
-    try {
-      final jsonString = await _secureStorage.read(key: _stationsKey);
-      if (jsonString != null && jsonString.isNotEmpty) {
-        final decoded = await compute(_parseJson, jsonString);
-        if (decoded is List) {
-          return decoded
-              .map((e) => Map<String, dynamic>.from(e as Map))
-              .toList();
-        }
+    final jsonString = await _secureStorage.read(key: _stationsKey);
+    if (jsonString != null && jsonString.isNotEmpty) {
+      final decoded = await compute(_parseJson, jsonString);
+      print('station $decoded');
+      if (decoded is List) {
+        return decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
       }
-    } catch (e) {
-      // ignore: avoid_print
-      print('[InspectionApi] failed to read stations: $e');
     }
     return [];
   }

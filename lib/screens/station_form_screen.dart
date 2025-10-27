@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import '../widgets/custom_dropdown.dart';
 
 void main() {
   runApp(
@@ -118,14 +119,19 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DropdownButtonFormField<String>(
-          value: _selectedStation,
-          hint: const Text('Select Station'),
-          items: _stations
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-              .toList(),
-          onChanged: (val) => setState(() => _selectedStation = val),
-          validator: (val) => val == null ? 'Please select a station' : null,
+        SizedBox(
+          width: double.infinity, // full width trigger
+          child: CustomDropdown(
+            items: _stations,
+            selectedValue: _selectedStation,
+            popupWidth:
+                MediaQuery.of(context).size.width * 0.95, // 95% of screen width
+            onChanged: (val) {
+              setState(() {
+                _selectedStation = val;
+              });
+            },
+          ),
         ),
         const SizedBox(height: 16),
         TextField(

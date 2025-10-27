@@ -276,7 +276,7 @@ class _InspectionDetailsPageState extends State<InspectionDetailsPage> {
                                     .map(
                                       (bytes) => pw.Container(
                                         width:
-                                            (PdfPageFormat.a4.width / 2) - 24,
+                                            (PdfPageFormat.a4.width / 3) - 16,
                                         height: 120,
                                         child: pw.Image(
                                           pw.MemoryImage(bytes),

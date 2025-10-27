@@ -432,27 +432,32 @@ class InspectionApiController {
     }
   }
 
-  Future<ApiResponse<List<ChecklistItem>>> getInspectionQuestions() async {
+  Future<ApiResponse<List<Map<String, dynamic>>>>
+  getInspectionQuestions() async {
     try {
       final resp = await _get('service/getInspectionQuestions');
       if (resp.statusCode == 200) {
         final body = resp.body.isNotEmpty
             ? await compute(_parseJson, resp.body)
             : {};
-        final rawList = _normalizeList(body, keys: ['data', 'questionObject']);
-        final questions = rawList
-            .map((e) => ChecklistItem.fromJson(Map<String, dynamic>.from(e)))
+        // Access "questionObject" directly
+        final List<dynamic> questionList = body['questionObject'] ?? [];
+        final questions = questionList
+            .map((e) => Map<String, dynamic>.from(e as Map))
             .toList();
+
         return ApiResponse.success(
           data: questions,
           message: 'Inspection questions loaded',
         );
       }
+
       return ApiResponse.error(
         message: 'Failed to load inspection questions',
         statusCode: resp.statusCode,
       );
     } catch (e) {
+      print('[DEBUG] Error in getInspectionQuestions: $e');
       return ApiResponse.error(message: 'Error: $e');
     }
   }

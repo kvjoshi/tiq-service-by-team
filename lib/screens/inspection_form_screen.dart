@@ -38,6 +38,37 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 0;
   List<String> _stations = [];
+
+  Map<String, List<Map<String, dynamic>>> _categorizedQuestions = {
+    'dispenser': [],
+    'tank': [],
+    'tceq': [],
+  };
+
+  Future<void> _loadInspectionQuestions() async {
+    final controller = InspectionApiController();
+    final response = await controller.getInspectionQuestions();
+
+    if (response.success && response.data != null) {
+      final allQuestions = response.data!;
+
+      // Group by category
+      setState(() {
+        _categorizedQuestions['dispenser'] = allQuestions
+            .where((q) => q['inspectionCategory'] == 'dispenser')
+            .toList();
+        _categorizedQuestions['tank'] = allQuestions
+            .where((q) => q['inspectionCategory'] == 'tank')
+            .toList();
+        _categorizedQuestions['tceq'] = allQuestions
+            .where((q) => q['inspectionCategory'] == 'tceq')
+            .toList();
+      });
+    } else {
+      debugPrint('[DEBUG] Failed to load inspection questions');
+    }
+  }
+
   Future<void> _loadStations() async {
     final controller = InspectionApiController();
 
@@ -80,6 +111,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
       text: DateFormat('dd MMM yyyy').format(_inspectionDate),
     );
     _loadStations();
+    _loadInspectionQuestions();
   }
 
   @override
@@ -114,24 +146,24 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
       ),
       Step(
         title: const Text('Dispenser Checklist'),
-        content: _buildChecklist('dispenserChecklist'),
+        content: _buildChecklist('dispenser'),
         isActive: _currentStep >= 1,
         state: _currentStep > 1 ? StepState.complete : StepState.indexed,
       ),
       Step(
         title: const Text('Tank Checklist'),
-        content: _buildChecklist('tankChecklist'),
+        content: _buildChecklist('tank'),
         isActive: _currentStep >= 2,
         state: _currentStep > 2 ? StepState.complete : StepState.indexed,
       ),
       Step(
         title: const Text('TCEQ Checklist'),
-        content: _buildChecklist('tceqChecklist'),
+        content: _buildChecklist('tceq'),
         isActive: _currentStep >= 3,
         state: _currentStep > 3 ? StepState.complete : StepState.indexed,
       ),
       Step(
-        title: const Text('Insepction Images'),
+        title: const Text('Inspection Images'),
         content: _buildImageSection(),
         isActive: _currentStep >= 4,
         state: _currentStep > 4 ? StepState.complete : StepState.indexed,
@@ -173,11 +205,32 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     );
   }
 
-  Widget _buildChecklist(String key) {
-    final questions = questionsJson[key] as List<dynamic>;
+  Widget _buildChecklist(String category) {
+    final questions = _categorizedQuestions[category] ?? [];
+
+    if (questions.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text(
+            'No questions available for this category.',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: questions.map((q) {
-        final questionKey = q['key'];
+        final questionId = q['_id'] ?? q['key'] ?? q['inspectionSetId'];
+        final questionText =
+            q['inspectionQuestion'] ?? q['question'] ?? 'Unknown Question';
+
+        _commentsControllers.putIfAbsent(
+          questionId,
+          () => TextEditingController(),
+        );
+
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8),
           shape: RoundedRectangleBorder(
@@ -190,7 +243,7 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  q['question'],
+                  questionText,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -201,24 +254,24 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
                   children: [
                     Radio<String>(
                       value: 'Yes',
-                      groupValue: _answers[questionKey],
+                      groupValue: _answers[questionId],
                       onChanged: (val) =>
-                          setState(() => _answers[questionKey] = val),
+                          setState(() => _answers[questionId] = val),
                     ),
                     const Text('Yes'),
                     const SizedBox(width: 20),
                     Radio<String>(
                       value: 'No',
-                      groupValue: _answers[questionKey],
+                      groupValue: _answers[questionId],
                       onChanged: (val) =>
-                          setState(() => _answers[questionKey] = val),
+                          setState(() => _answers[questionId] = val),
                     ),
                     const Text('No'),
                   ],
                 ),
                 const SizedBox(height: 8),
                 TextFormField(
-                  controller: _commentsControllers[questionKey],
+                  controller: _commentsControllers[questionId],
                   decoration: const InputDecoration(
                     hintText: 'Comments',
                     border: OutlineInputBorder(),
@@ -301,38 +354,46 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
     );
   }
 
-  bool _validateCurrentStep() {
-    switch (_currentStep) {
-      case 0: // Station Details
-        if (_selectedStation == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Please select a station')),
-          );
-          return false;
-        }
-        return true;
-      case 1: // Dispenser
-        return _validateChecklist('dispenserChecklist');
-      case 2: // Tank
-        return _validateChecklist('tankChecklist');
-      case 3: // TCEQ
-        return _validateChecklist('tceqChecklist');
-      default:
-        return true; // Images step has no required fields
-    }
-  }
-
-  bool _validateChecklist(String key) {
-    final questions = questionsJson[key] as List<dynamic>;
+  bool _validateChecklist(String category) {
+    final questions = _categorizedQuestions[category] ?? [];
     for (var q in questions) {
-      final questionKey = q['key'];
-      if (_answers[questionKey] == null || _answers[questionKey]!.isEmpty) {
+      final id = q['_id'] ?? q['inspectionSetId'] ?? q['key'];
+      if (_answers[id] == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please answer: ${q['question']}')),
+          SnackBar(
+            content: Text(
+              'Please answer: ${q['inspectionQuestion'] ?? 'Question'}',
+            ),
+          ),
         );
         return false;
       }
     }
+    return true;
+  }
+
+  bool _validateCurrentStep() {
+    // Step 0: Station details must be filled
+    if (_currentStep == 0 && _selectedStation == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a station')));
+      return false;
+    }
+
+    // Map step index to categories
+    final stepCategories = ['dispenser', 'tank', 'tceq'];
+
+    // Validate all steps up to current
+    for (int i = 0; i <= _currentStep - 1 && i < stepCategories.length; i++) {
+      if (!_validateChecklist(stepCategories[i])) return false;
+    }
+
+    // Validate current checklist step too
+    if (_currentStep > 0 && _currentStep - 1 < stepCategories.length) {
+      if (!_validateChecklist(stepCategories[_currentStep - 1])) return false;
+    }
+
     return true;
   }
 

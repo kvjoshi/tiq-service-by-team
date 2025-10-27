@@ -38,15 +38,26 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   int _currentStep = 0;
   List<String> _stations = [];
-
   Future<void> _loadStations() async {
     final controller = InspectionApiController();
 
-    final stationsData = await controller.readStations();
+    // Try reading from local storage first
+    List<Map<String, dynamic>> stationsData = await controller.readStations();
+
+    // If nothing is stored, fetch from API and store it
+    if (stationsData.isEmpty) {
+      final response = await controller.getStations();
+      if (response.success && response.data != null) {
+        stationsData = response.data!;
+        await controller.saveStations(stationsData);
+      }
+    }
+
     if (!mounted) return;
     setState(() {
       _stations = stationsData
-          .map((s) => s['stationName'] as String) // extract station names
+          .map((s) => s['stationName'] as String)
+          .where((name) => name.isNotEmpty)
           .toList();
     });
   }

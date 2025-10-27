@@ -417,6 +417,10 @@ class InspectionApiController {
           body,
           keys: ['stations', 'data', 'items', 'result'],
         );
+
+        // 🔥 Save the stations to local storage for offline use
+        await saveStations(List<Map<String, dynamic>>.from(list));
+
         return ApiResponse.success(data: list, message: 'Stations loaded');
       }
       return ApiResponse.error(

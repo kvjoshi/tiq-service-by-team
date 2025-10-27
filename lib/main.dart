@@ -109,13 +109,41 @@ class _RootDecider extends StatefulWidget {
   State<_RootDecider> createState() => _RootDeciderState();
 }
 
-class _RootDeciderState extends State<_RootDecider> {
+class _RootDeciderState extends State<_RootDecider>
+    with TickerProviderStateMixin {
   final _api = InspectionApiController();
   bool _checking = true;
+
+  late AnimationController _logoController;
+  late AnimationController _loaderController;
+  late Animation<double> _logoScale;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    // Logo animation (scale + fade in)
+    _logoController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _logoScale = CurvedAnimation(
+      parent: _logoController,
+      curve: Curves.easeOutBack,
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _logoController,
+      curve: Curves.easeIn,
+    );
+
+    // Loader pulse animation
+    _loaderController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
+
+    _logoController.forward();
     _check();
   }
 
@@ -123,6 +151,7 @@ class _RootDeciderState extends State<_RootDecider> {
     final prefs = await SharedPreferences.getInstance();
     const maxWait = Duration(seconds: 2);
     final deadline = DateTime.now().add(maxWait);
+
     while (DateTime.now().isBefore(deadline)) {
       final inProgress = prefs.getBool('auth_sync_in_progress') ?? false;
       if (!inProgress) break;
@@ -130,8 +159,14 @@ class _RootDeciderState extends State<_RootDecider> {
     }
 
     final token = await _api.getToken();
+
+    // Add a short delay so the animation feels natural
+    await Future.delayed(const Duration(seconds: 2));
+
     if (mounted) {
       setState(() => _checking = false);
+      await Future.delayed(const Duration(milliseconds: 400));
+
       if (token == null || token.isEmpty) {
         Navigator.of(context).pushReplacementNamed('/login');
       } else {
@@ -141,13 +176,68 @@ class _RootDeciderState extends State<_RootDecider> {
   }
 
   @override
+  void dispose() {
+    _logoController.dispose();
+    _loaderController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       body: Container(
-        color: const Color(0xFF37A8C0),
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF8FEFF), // icy white
+              Color(0xFFE9FAFC), // gentle sky tint
+              Color(0xFFD3F3F8), // very light teal
+            ],
+          ),
+        ),
         child: Center(
           child: _checking
-              ? const CircularProgressIndicator(color: Colors.white)
+              ? FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _logoScale,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // TankIQ Logo
+                        Image.asset(
+                          'assets/images/logo.png',
+                          height: size.height * 0.16,
+                          width: size.width * 0.45,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stack) => Icon(
+                            Icons.local_gas_station,
+                            size: 80,
+                            color: Colors.grey.shade200,
+                          ),
+                        ),
+                        const SizedBox(height: 36),
+                        // Pulsing Loader
+                        AnimatedBuilder(
+                          animation: _loaderController,
+                          builder: (context, child) => Transform.scale(
+                            scale: 1 + 0.1 * _loaderController.value,
+                            child: const CircularProgressIndicator(
+                              color: Color(0xFF37A8C0),
+                              strokeWidth: 3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
               : const SizedBox(),
         ),
       ),

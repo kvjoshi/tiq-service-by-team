@@ -140,7 +140,6 @@ class _InspectionFormScreenState extends State<InspectionFormScreen> {
   }
 
   Widget _buildStationDetails() {
-    debugPrint("Selected station: $_stations");
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

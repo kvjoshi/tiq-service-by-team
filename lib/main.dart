@@ -1,16 +1,46 @@
 import 'package:flutter/material.dart';
-import 'package:tiq_service_mob/screens/inspection_details_screen.dart';
 import 'package:tiq_service_mob/screens/inspection_list_screen.dart';
 import 'package:tiq_service_mob/screens/profile_screen.dart';
 import 'package:tiq_service_mob/screens/station_form_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'screens/login_screen.dart';
 import 'screens/station_list_screen.dart';
 import 'controllers/inspection_api_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Request permissions before launching the app
+  await _requestPermissions();
+
   runApp(const MyApp());
+}
+
+/// Request storage and photos permission
+Future<void> _requestPermissions() async {
+  final statuses = await [
+    Permission.storage,
+    Permission.photos,
+    Permission.videos,
+  ].request();
+
+  if (statuses[Permission.storage]?.isGranted ?? false) {
+    // ignore: avoid_print
+    print('Storage permission granted');
+  } else {
+    // ignore: avoid_print
+    print('Storage permission denied');
+  }
+
+  if (statuses[Permission.photos]?.isGranted ?? false) {
+    // ignore: avoid_print
+    print('Photos permission granted');
+  } else {
+    // ignore: avoid_print
+    print('Photos permission denied');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -155,7 +185,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(top: 8.0, right: 12.0),
+            padding: const EdgeInsets.only(),
             child: PopupMenuButton<String>(
               onSelected: (value) async {
                 if (value == 'logout') {
@@ -172,7 +202,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               color: Colors.white,
               elevation: 4,
-              offset: const Offset(0, 45), // top margin below AppBar
+              offset: const Offset(0, 50),
               constraints: const BoxConstraints(minWidth: 130, maxWidth: 220),
               itemBuilder: (ctx) => [
                 PopupMenuItem(
@@ -188,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         'Profile',
                         style: TextStyle(
-                          color: const Color(0xFF404040),
+                          color: Color(0xFF404040),
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
                         ),
@@ -209,7 +239,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         'Logout',
                         style: TextStyle(
-                          color: const Color(0xFF404040),
+                          color: Color(0xFF404040),
                           fontWeight: FontWeight.w500,
                           fontSize: 16,
                         ),
@@ -262,86 +292,118 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const Spacer(flex: 2),
-            Icon(Icons.local_gas_station, size: 90, color: primaryColor),
-            const SizedBox(height: 20),
-            const Text(
-              'Welcome to Station Inspection',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: primaryColor,
-              ),
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Manage and conduct inspections easily and efficiently.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.black54),
-            ),
-            const Spacer(),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.add_circle_outline),
-              label: const Text(
-                'New Inspection',
-                style: TextStyle(fontSize: 16),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 24,
+      body: Container(
+        width: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFE3F2FD), Color(0xFFFFFFFF)],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Spacer(flex: 2),
+              Container(
+                decoration: BoxDecoration(
+                  // ignore: deprecated_member_use
+                  color: primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                padding: const EdgeInsets.all(24),
+                child: Icon(
+                  Icons.local_gas_station,
+                  size: 80,
+                  color: primaryColor,
                 ),
               ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) =>
-                        const InspectionFormScreen(title: "New Inspection"),
+              const SizedBox(height: 28),
+              const Text(
+                'Station Inspection',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: primaryColor,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Manage and conduct inspections effortlessly.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black54,
+                  height: 1.4,
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text(
+                    'Start New Inspection',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
-                );
-              },
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.list),
-              label: const Text(
-                'All Inspections',
-                style: TextStyle(fontSize: 16),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: primaryColor,
-                side: const BorderSide(color: primaryColor, width: 1.5),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 14,
-                  horizontal: 24,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const InspectionListScreen(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    elevation: 2,
                   ),
-                );
-              },
-            ),
-            const Spacer(flex: 2),
-          ],
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const InspectionFormScreen(title: "New Inspection"),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.list_alt_outlined),
+                  label: const Text(
+                    'View All Inspections',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: primaryColor,
+                    side: BorderSide(
+                      // ignore: deprecated_member_use
+                      color: primaryColor.withOpacity(0.8),
+                      width: 1.4,
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const InspectionListScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const Spacer(flex: 2),
+            ],
+          ),
         ),
       ),
     );

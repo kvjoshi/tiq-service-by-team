@@ -333,12 +333,15 @@ class InspectionApiController {
       // If there’s no cookie (refresh token), no point in calling the server
       final cookie = await _readCookie();
       if (cookie == null || cookie.isEmpty) {
+        // ignore: avoid_print
         print('[InspectionApi] No refresh cookie found — forcing logout');
         await handleUnauthorized();
         return false;
       }
 
       final resp = await http.get(uri, headers: headers);
+      // Debug dump
+      // ignore: avoid_print
       print(
         '[InspectionApi] refresh status=${resp.statusCode} body=${resp.body}',
       );
@@ -363,14 +366,18 @@ class InspectionApiController {
           await _saveToken(token);
           return true;
         } else {
+          // ignore: avoid_print
           print('[InspectionApi] Refresh succeeded but no token found.');
         }
       } else if (resp.statusCode == 401) {
+        // ignore: avoid_print
         print('[InspectionApi] Refresh 401 — refresh token invalid or expired');
       } else {
+        // ignore: avoid_print
         print('[InspectionApi] Unexpected refresh code: ${resp.statusCode}');
       }
     } catch (e) {
+      // ignore: avoid_print
       print('[InspectionApi] refresh error: $e');
     }
 

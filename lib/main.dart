@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tiq_service_mob/screens/inspection_list_screen.dart';
 import 'package:tiq_service_mob/screens/profile_screen.dart';
-import 'package:tiq_service_mob/screens/station_form_screen.dart';
+import 'package:tiq_service_mob/screens/inspection_form_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'screens/login_screen.dart';

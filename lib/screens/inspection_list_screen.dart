@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../controllers/inspection_api_controller.dart';
 import '../models/inspection_model.dart';
 import 'inspection_details_screen.dart';
-import 'station_form_screen.dart';
+import 'inspection_form_screen.dart';
 
 class InspectionListScreen extends StatefulWidget {
   const InspectionListScreen({super.key});
